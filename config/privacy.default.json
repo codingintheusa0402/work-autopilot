@@ -1,0 +1,41 @@
+{
+  "_comment": "Privacy defaults. Copy keys into workspace/config.json to override. Removing an exclusion is your choice and your responsibility.",
+  "local_only": true,
+  "record_audio": false,
+  "audio_transcription": "local-only (cloud engines are never passed)",
+  "disable_screenpipe_telemetry": true,
+  "auto_delete_raw_after_analysis": true,
+  "observe_days_min": 3,
+  "observe_days_max": 7,
+  "screenpipe_retention_days": 8,
+  "screenpipe_port": 3031,
+  "keep_window_titles": true,
+  "redact_in_titles": ["emails", "phone_numbers", "long_numbers", "card_numbers", "resident_ids"],
+
+  "excluded_apps": [
+    "1Password", "Bitwarden", "LastPass", "Dashlane", "Keeper", "KeePassXC", "KeePass",
+    "NordPass", "Proton Pass", "Enpass", "RoboForm", "Keychain Access", "Passwords",
+    "Credential Manager",
+
+    "KakaoTalk", "카카오톡", "WhatsApp", "Telegram", "Signal", "Messages", "LINE", "WeChat",
+    "Messenger", "Discord", "Threema", "Viber", "Wire",
+
+    "Toss", "토스", "KakaoBank", "카카오뱅크", "KB스타뱅킹", "신한 SOL", "하나원큐", "우리WON",
+    "NH스마트뱅킹", "PayPal", "Venmo", "Revolut", "Wise", "Cash App", "Banking", "Bank"
+  ],
+
+  "excluded_title_keywords": [
+    "password", "비밀번호", "passcode", "OTP", "2FA", "verification code", "인증번호",
+    "bank", "banking", "은행", "뱅킹", "뱅크", "카드 결제", "checkout", "payment",
+    "incognito", "private browsing", "InPrivate", "시크릿"
+  ],
+
+  "excluded_domains": [
+    "1password.com", "bitwarden.com", "lastpass.com", "dashlane.com",
+    "web.whatsapp.com", "web.telegram.org", "messenger.com", "web.kakao.com", "discord.com",
+    "paypal.com", "venmo.com", "wise.com", "revolut.com",
+    "chase.com", "bankofamerica.com", "wellsfargo.com", "citi.com", "hsbc.com",
+    "kbstar.com", "shinhan.com", "wooribank.com", "kebhana.com", "hanabank.com",
+    "nonghyup.com", "ibk.co.kr", "kakaobank.com", "toss.im", "tossbank.com"
+  ]
+}

@@ -1,0 +1,29 @@
+# ── Your data never goes to git ──────────────────────────────
+# recordings, exports, reports, specs, your automations, logs, backups, approvals
+workspace/
+*.screenpipe/
+.screenpipe/
+recordings/
+reports/
+logs/
+*.log
+*.mp4
+*.wav
+*.jpg
+*.jpeg
+!docs/images/*.jpg
+*.sqlite
+*.db
+*.jsonl
+!samples/**/*.jsonl
+.env
+.env.*
+*.pem
+*.key
+
+# Python / OS
+__pycache__/
+*.pyc
+.venv/
+.DS_Store
+Thumbs.db

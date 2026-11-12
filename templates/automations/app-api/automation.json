@@ -1,0 +1,13 @@
+{
+  "id": "__ID__",
+  "title": "__TITLE__",
+  "task_ids": [],
+  "tool": "app-api",
+  "entry": ["python3", "run.py"],
+  "params": {},
+  "risky_actions": {},
+  "schedule": null,
+  "minutes_saved_per_run": 0,
+  "timeout_s": 600,
+  "status": "draft"
+}

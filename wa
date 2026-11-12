@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# work-autopilot CLI (macOS / Linux)
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PY="${WA_PYTHON:-$(command -v python3 || command -v python)}"
+exec "$PY" "$DIR/wa.py" "$@"

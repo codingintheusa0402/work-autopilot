@@ -1,0 +1,18 @@
+{
+  "id": "demo-invoice-sorter",
+  "title": "다운로드 폴더의 거래명세서 PDF 정리 (데모)",
+  "task_ids": ["T11", "T13", "T14"],
+  "tool": "script",
+  "entry": ["python3", "run.py"],
+  "params": {
+    "inbox": "{workspace}/demo_files/Downloads",
+    "archive": "{workspace}/demo_files/거래명세서"
+  },
+  "risky_actions": {
+    "send_message": "처리 요약을 팀 채널에 보내기 (데모: 실제로는 아무 데도 보내지 않고 화면에만 출력)"
+  },
+  "schedule": {"time": "13:30", "weekdays": [1, 2, 3, 4, 5]},
+  "minutes_saved_per_run": 18,
+  "timeout_s": 120,
+  "status": "draft"
+}
