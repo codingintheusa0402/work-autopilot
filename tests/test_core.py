@@ -108,6 +108,7 @@ class Automations(unittest.TestCase):
         self.assertEqual(len(last["blocked"]), 1)                                # send_message not approved
         quiet(sdk.undo, last["run_id"])
         self.assertEqual(len(list(inbox.iterdir())), 3)
+        self.assertEqual(runner.recent_runs(1)[-1]["minutes_saved"], 0)          # undone runs save nothing
 
     def test_code_change_invalidates_test(self):
         dst, _ = install_demo()

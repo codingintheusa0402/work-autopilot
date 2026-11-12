@@ -132,7 +132,22 @@ def test(auto_id: str, require_spec: bool = True) -> int:
 
 
 def recent_runs(limit: int = 200) -> list[dict]:
+    """Run records, newest last. Live runs that were undone get undone=True and save no time."""
     if not RUNS_LOG.exists():
         return []
     lines = RUNS_LOG.read_text(encoding="utf-8").splitlines()[-limit:]
-    return [json.loads(x) for x in lines if x.strip()]
+    out = []
+    for x in lines:
+        if not x.strip():
+            continue
+        r = json.loads(x)
+        if r.get("mode") == "live":
+            try:
+                ops = json.loads((C.BACKUP_DIR / r["run_id"] / "ops.json").read_text(encoding="utf-8"))
+                if ops.get("undone_at"):
+                    r["undone"] = True
+                    r["minutes_saved"] = 0
+            except (FileNotFoundError, json.JSONDecodeError):
+                pass
+        out.append(r)
+    return out

@@ -204,7 +204,7 @@ def cmd_logs(a) -> int:
         if a.id and r["automation"] != a.id:
             continue
         print(f"{r['start'][:19]}  {r['automation']:<24} {r['mode']:<4} {'OK  ' if r['ok'] else 'FAIL'} "
-              f"ops={r['ops']} blocked={len(r['blocked'])} saved={r['minutes_saved']}m  {r['run_id']}")
+              f"ops={r['ops']} blocked={len(r['blocked'])} saved={r['minutes_saved']}m{' UNDONE' if r.get('undone') else ''}  {r['run_id']}")
     return 0
 
 

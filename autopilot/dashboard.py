@@ -41,6 +41,8 @@ def build() -> str:
         last_txt = "–"
         if last:
             last_txt = f"{html.escape(last['start'][:16].replace('T', ' '))} · {last['mode']} · {'OK' if last['ok'] else 'FAIL'}"
+            if last.get("undone"):
+                last_txt += " · 되돌림"
             if last.get("blocked"):
                 last_txt += f" · 승인대기 {len(last['blocked'])}"
         cls = {"scheduled": "auto", "tested": "ai"}.get(a.get("status"), "human")
