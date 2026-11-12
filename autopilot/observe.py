@@ -9,6 +9,7 @@ import datetime as dt
 import gzip
 import json
 import os
+import secrets
 import shutil
 import signal
 import subprocess
@@ -110,6 +111,10 @@ def _load_state() -> dict:
 def _save_state(s: dict) -> None:
     C.STATE_DIR.mkdir(parents=True, exist_ok=True)
     STATE.write_text(json.dumps(s, indent=2))
+    try:
+        os.chmod(STATE, 0o600)
+    except OSError:
+        pass
 
 
 def _pid_alive(pid: int) -> bool:
@@ -151,9 +156,13 @@ def start(cfg: dict, days: int, extra: list[str] | None = None) -> int:
         kw["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
     else:
         kw["start_new_session"] = True
+    # screenpipe's API requires a bearer key. We generate a throwaway local key for this
+    # observation only (not a user credential) and keep it in workspace/state (mode 600).
+    api_key = secrets.token_urlsafe(32)
+    kw["env"] = dict(os.environ, SCREENPIPE_API_KEY=api_key)
     p = subprocess.Popen(cmd, **kw)
     now = dt.datetime.now().astimezone()
-    _save_state({"pid": p.pid, "started": now.isoformat(), "days": days,
+    _save_state({"pid": p.pid, "started": now.isoformat(), "days": days, "api_key": api_key,
                  "until": (now + dt.timedelta(days=days)).isoformat(), "port": cfg.get("screenpipe_port", 3031)})
     print(f"screenpipe 기록 시작 (pid {p.pid}). {days}일 뒤 `wa observe stop` → `wa analyze` 하세요.")
     print("macOS: 시스템 설정 → 개인정보 보호 및 보안 → '화면 및 시스템 오디오 기록'에서 터미널/node 를 허용해야 합니다.")
@@ -183,6 +192,7 @@ def stop() -> int:
         pass
     s["stopped"] = dt.datetime.now().astimezone().isoformat()
     s.pop("pid", None)
+    s.pop("api_key", None)
     _save_state(s)
     print("screenpipe 기록을 멈췄습니다.")
     return 0
@@ -208,7 +218,7 @@ def _dir_size(p: Path) -> int:
 
 def _get(url: str) -> dict:
     req = urllib.request.Request(url)
-    key = os.environ.get("SCREENPIPE_LOCAL_API_KEY")  # only needed for non-localhost setups
+    key = _load_state().get("api_key") or os.environ.get("SCREENPIPE_LOCAL_API_KEY")
     if key:
         req.add_header("Authorization", "Bearer " + key)
     with urllib.request.urlopen(req, timeout=60) as r:
@@ -243,6 +253,8 @@ def export(cfg: dict, start_iso: str | None = None, end_iso: str | None = None) 
                     continue
                 f.write(json.dumps(ev, ensure_ascii=False) + "\n")
                 kept += 1
+            if len(data) < limit:
+                break
             offset += limit
     print(f"export: {kept} events kept, {dropped} dropped by privacy filter → {out}")
     return out

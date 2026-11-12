@@ -74,9 +74,16 @@ def cmd_observe(a) -> int:
     if a.action == "status":
         return observe.status(cfg)
     if a.action == "stop":
+        exported = None
         if observe.health(cfg):
-            observe.export(cfg)
-        return observe.stop()
+            try:
+                exported = observe.export(cfg)
+            except Exception as e:  # never leave the recorder running because export failed
+                print(f"export 실패: {e} — 기록은 멈추고, 원본은 지우지 않고 남겨 둡니다.")
+        rc = observe.stop()
+        if exported is None:
+            print("주의: 이번 기록의 메타데이터가 export 되지 않았습니다. 원본은 workspace/raw 에 남아 있습니다.")
+        return rc
     if a.action == "export":
         return 0 if observe.export(cfg) else 1
     if a.action == "purge":
