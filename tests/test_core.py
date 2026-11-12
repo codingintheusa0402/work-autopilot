@@ -168,6 +168,34 @@ class Scheduling(unittest.TestCase):
             self.assertEqual(len(list(agents.glob("*.plist"))), 0)
 
 
+class ExportParsing(unittest.TestCase):
+    def test_export_keeps_metadata_only(self):
+        """Fake screenpipe /search pages (shape from screenpipe's routes/content.rs)."""
+        cfg = C.load_config()
+        pages = {
+            "ocr": [{"type": "OCR", "content": {"timestamp": "2030-01-01T00:00:00Z", "app_name": "Excel",
+                                                "window_name": "orders.xlsx", "browser_url": None, "text": "SECRET SCREEN TEXT"}},
+                    {"type": "OCR", "content": {"timestamp": "2030-01-01T00:00:05Z", "app_name": "1Password",
+                                                "window_name": "Vault", "text": "x"}}],
+            "accessibility": [{"type": "UI", "content": {"timestamp": "2030-01-01T00:00:10Z", "app_name": "Google Chrome",
+                                                          "window_name": "Orders", "browser_url": "https://erp.example.com/o?id=1", "text": "y"}},
+                              {"type": "Audio", "content": {"timestamp": "2030-01-01T00:00:11Z"}}],
+        }
+
+        def fake_get(url):
+            from urllib.parse import parse_qs, urlparse
+            q = parse_qs(urlparse(url).query)
+            return {"data": pages[q["content_type"][0]] if q["offset"][0] == "0" else []}
+
+        with mock.patch.object(observe, "health", return_value={"status": "healthy"}), \
+                mock.patch.object(observe, "_get", side_effect=fake_get):
+            out = quiet(observe.export, cfg, "2030-01-01T00:00:00Z", "2030-01-02T00:00:00Z")
+        rows = observe.load_events([out])
+        self.assertEqual([r["app"] for r in rows], ["Excel", "Google Chrome"])
+        self.assertEqual(rows[1]["domain"], "erp.example.com/o")
+        self.assertNotIn("SECRET", json.dumps(rows))
+
+
 def tearDownModule():
     shutil.rmtree(TMP, ignore_errors=True)
 

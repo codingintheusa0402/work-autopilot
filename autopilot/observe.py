@@ -236,26 +236,35 @@ def export(cfg: dict, start_iso: str | None = None, end_iso: str | None = None) 
     end_iso = end_iso or dt.datetime.now(dt.timezone.utc).isoformat()
     out = C.OBS_DIR / f"events-{dt.datetime.now():%Y%m%d-%H%M}.jsonl.gz"
     kept = dropped = 0
-    offset, limit = 0, 500
+    seen: set = set()
+    limit = 500
     with gzip.open(out, "wt", encoding="utf-8") as f:
-        while True:
-            q = urllib.parse.urlencode({"content_type": "ocr", "limit": limit, "offset": offset,
-                                        "start_time": start_iso, "end_time": end_iso, "max_content_length": 1})
-            data = _get(f"http://127.0.0.1:{port}/search?{q}").get("data", [])
-            if not data:
-                break
-            for item in data:
-                c = item.get("content", {})
-                ev = clean_event(cfg, c.get("timestamp"), c.get("app_name"), c.get("window_name"),
-                                 c.get("browser_url"), "screenpipe")
-                if ev is None:
-                    dropped += 1
-                    continue
-                f.write(json.dumps(ev, ensure_ascii=False) + "\n")
-                kept += 1
-            if len(data) < limit:
-                break
-            offset += limit
+        # Screen frames come back as OCR items (text from OCR or the accessibility tree) or as
+        # accessibility/UI items depending on the screenpipe version. We read both, keep metadata only.
+        for ctype in ("ocr", "accessibility"):
+            offset = 0
+            while True:
+                q = urllib.parse.urlencode({"content_type": ctype, "limit": limit, "offset": offset,
+                                            "start_time": start_iso, "end_time": end_iso, "max_content_length": 1})
+                data = _get(f"http://127.0.0.1:{port}/search?{q}").get("data", [])
+                for item in data:
+                    if item.get("type") not in ("OCR", "UI"):
+                        continue
+                    c = item.get("content", {})
+                    key = (c.get("timestamp"), c.get("app_name"), c.get("window_name"))
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    ev = clean_event(cfg, c.get("timestamp"), c.get("app_name"), c.get("window_name"),
+                                     c.get("browser_url"), "screenpipe")
+                    if ev is None:
+                        dropped += 1
+                        continue
+                    f.write(json.dumps(ev, ensure_ascii=False) + "\n")
+                    kept += 1
+                if len(data) < limit:
+                    break
+                offset += limit
     print(f"export: {kept} events kept, {dropped} dropped by privacy filter → {out}")
     return out
 
