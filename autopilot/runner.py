@@ -4,6 +4,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import os
+import secrets
 import subprocess
 import sys
 from pathlib import Path
@@ -54,7 +55,7 @@ def run(auto_id: str, live: bool = False, scheduled: bool = False, quiet: bool =
         if m.get("status") not in ("tested", "scheduled") or m.get("tested_hash") != h:
             print("실제 실행(--live)은 `wa test` 를 통과한 같은 코드만 가능합니다. 코드가 바뀌었다면 다시 test 하세요.")
             return 2
-    run_id = f"{dt.datetime.now():%Y%m%d-%H%M%S}-{auto_id}"
+    run_id = f"{dt.datetime.now():%Y%m%d-%H%M%S}-{secrets.token_hex(2)}-{auto_id}"   # unique even within a second
     env = dict(os.environ, WA_MODE="live" if live else "dry", WA_RUN_ID=run_id,
                WA_AUTOMATION_DIR=str(d), WA_WORKSPACE=str(C.WORKSPACE),
                PYTHONPATH=str(C.ROOT) + os.pathsep + os.environ.get("PYTHONPATH", ""))
