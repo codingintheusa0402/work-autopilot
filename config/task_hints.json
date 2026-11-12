@@ -13,7 +13,7 @@
      "nature": "structured"},
     {"id": "files",       "label": "파일·PDF 정리",     "apps": ["finder", "explorer", "file explorer", "preview", "acrobat", "pdf"], "domains": [], "title": ["downloads", "다운로드", "폴더"],
      "nature": "structured"},
-    {"id": "document",    "label": "문서 / 보고서 작성",       "apps": ["word", "pages", "powerpoint", "keynote", "hwp", "한글", "notion", "google docs"], "domains": ["docs.google.com/document", "docs.google.com/presentation", "notion.so"], "title": [".docx", ".pptx", "보고", "report"],
+    {"id": "document",    "label": "문서 / 보고서 작성",       "apps": ["word", "pages", "powerpoint", "keynote", "hwp", "한글", "notion", "google docs", "textedit", "notepad"], "domains": ["docs.google.com/document", "docs.google.com/presentation", "notion.so"], "title": [".docx", ".pptx", "보고", "report"],
      "nature": "text"},
     {"id": "research",    "label": "웹 검색 / 자료 조사",       "apps": [], "domains": ["google.com/search", "naver.com", "bing.com", "wikipedia.org"], "title": ["search", "검색"],
      "nature": "mixed"},

@@ -154,8 +154,10 @@ def analyze(events: list[dict], workdays_per_week: int = 5) -> dict:
     total_by_key = collections.Counter()
     for s in sessions:
         total_by_key[s["key"]] += s["sec"]
+    # short observations (e.g. a 15-minute test) scale the cut-off down so real tasks still show up
+    min_task_s = min(MIN_TASK_MIN * 60, 0.03 * sum(total_by_key.values()))
     for s in sessions:
-        if total_by_key[s["key"]] < MIN_TASK_MIN * 60:
+        if total_by_key[s["key"]] < min_task_s:
             s["key"] = ("other", "(여러 앱)", "", "짧은 작업 모음")
             s["cat"] = {"id": "other", "label": "기타 (짧은 작업 모음)", "nature": "mixed"}
 
