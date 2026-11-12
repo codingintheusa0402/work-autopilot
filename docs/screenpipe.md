@@ -43,3 +43,7 @@ one `--url-block <domain>:subdomains` per excluded site.
 
 After recording, `wa observe stop` exports only **time, app name, redacted window title and site domain** — no screen
 text, no images — and `wa analyze` deletes the raw recordings.
+
+Note: even with `--data-dir`, screenpipe 0.4.58 writes a tiny `~/.screenpipe/machine_id` file (an installation id,
+no screen data). We leave `~/.screenpipe` alone because it may belong to your own screenpipe install; delete it yourself
+if you don't use screenpipe otherwise.
