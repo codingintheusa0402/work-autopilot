@@ -81,6 +81,7 @@ def record_command(cfg: dict) -> list[str]:
         "--disable-telemetry",
         "--video-quality", "low",
         "--use-pii-removal=true",
+        "--focused-window-screenshots=true",     # black out everything outside the window in front
         "--ignore-incognito-windows=true",
         "--disable-keyboard-capture",
         "--disable-clipboard-capture",
@@ -92,6 +93,8 @@ def record_command(cfg: dict) -> list[str]:
     else:
         # local Whisper only. We never pass a cloud engine or a Deepgram key.
         cmd += ["--audio-transcription-engine", "whisper-large-v3-turbo-quantized"]
+    for w in cfg.get("include_windows", []):
+        cmd += ["--included-windows", w]          # optional allow-list: record only these apps/windows
     for a in cfg.get("excluded_apps", []):
         cmd += ["--ignored-windows", a]
     for k in cfg.get("excluded_title_keywords", []):
@@ -136,15 +139,18 @@ def health(cfg: dict) -> dict | None:
         return None
 
 
-def start(cfg: dict, days: int, extra: list[str] | None = None) -> int:
+def start(cfg: dict, days: float, extra: list[str] | None = None, recorder: str | None = None) -> int:
     lo, hi = cfg.get("observe_days_min", 3), cfg.get("observe_days_max", 7)
-    if not lo <= days <= hi:
+    if not lo <= days <= hi and not os.environ.get("WA_ALLOW_SHORT_OBSERVE"):
         print(f"관찰 기간은 {lo}~{hi}일 사이로 정해 주세요. (got {days})")
         return 2
     s = _load_state()
     if _pid_alive(s.get("pid", 0)):
         print(f"이미 기록 중입니다 (pid {s['pid']}). `wa observe status` 로 확인하세요.")
         return 0
+    recorder = recorder or cfg.get("recorder", "screenpipe")
+    if recorder == "builtin":
+        return _start_builtin(cfg, days)
     if not shutil.which("npx"):
         print("Node.js (npx) 가 필요합니다. https://nodejs.org 에서 설치 후 다시 실행하세요.")
         return 2
@@ -162,10 +168,34 @@ def start(cfg: dict, days: int, extra: list[str] | None = None) -> int:
     kw["env"] = dict(os.environ, SCREENPIPE_API_KEY=api_key)
     p = subprocess.Popen(cmd, **kw)
     now = dt.datetime.now().astimezone()
-    _save_state({"pid": p.pid, "started": now.isoformat(), "days": days, "api_key": api_key,
+    _save_state({"pid": p.pid, "recorder": "screenpipe", "started": now.isoformat(), "days": days, "api_key": api_key,
                  "until": (now + dt.timedelta(days=days)).isoformat(), "port": cfg.get("screenpipe_port", 3031)})
     print(f"screenpipe 기록 시작 (pid {p.pid}). {days}일 뒤 `wa observe stop` → `wa analyze` 하세요.")
     print("macOS: 시스템 설정 → 개인정보 보호 및 보안 → '화면 및 시스템 오디오 기록'에서 터미널/node 를 허용해야 합니다.")
+    return 0
+
+
+def _start_builtin(cfg: dict, days: float) -> int:
+    """Start the license-free built-in logger (autopilot/logger.py) as a detached process."""
+    import sys
+    log = open(C.LOG_DIR / "builtin-logger.log", "ab")
+    kw = {"stdout": log, "stderr": subprocess.STDOUT, "stdin": subprocess.DEVNULL, "cwd": str(C.ROOT),
+          "env": dict(os.environ, WA_WORKSPACE=str(C.WORKSPACE))}
+    if os.name == "nt":
+        kw["creationflags"] = subprocess.CREATE_NEW_PROCESS_GROUP  # type: ignore[attr-defined]
+    else:
+        kw["start_new_session"] = True
+    now = dt.datetime.now().astimezone()
+    until = now + dt.timedelta(days=days)
+    _save_state({"recorder": "builtin", "started": now.isoformat(), "days": days, "until": until.isoformat()})
+    p = subprocess.Popen([sys.executable, "-m", "autopilot.logger"], **kw)
+    st = _load_state()
+    st["pid"] = p.pid
+    _save_state(st)
+    shots = cfg.get("logger_screenshot_every_s", 0)
+    print(f"내장 기록기 시작 (pid {p.pid}) · {cfg.get('logger_interval_s', 10)}초마다 앞 창의 앱/제목/시간만 기록"
+          + (f" · {shots}초마다 앞 창 스크린샷 (로컬)" if shots else " · 스크린샷 없음") + ".")
+    print("macOS: 창 제목까지 기록하려면 터미널 앱에 '화면 및 시스템 오디오 기록' 권한이 필요합니다 (없으면 앱 이름만).")
     return 0
 
 
@@ -173,7 +203,7 @@ def stop() -> int:
     s = _load_state()
     pid = s.get("pid", 0)
     if not _pid_alive(pid):
-        print("기록 중인 screenpipe 가 없습니다.")
+        print("기록 중인 기록기가 없습니다.")
         s.pop("pid", None)
         _save_state(s)
         return 0
@@ -194,17 +224,18 @@ def stop() -> int:
     s.pop("pid", None)
     s.pop("api_key", None)
     _save_state(s)
-    print("screenpipe 기록을 멈췄습니다.")
+    print(f"{s.get('recorder', 'screenpipe')} 기록을 멈췄습니다.")
     return 0
 
 
 def status(cfg: dict) -> int:
     s = _load_state()
     alive = _pid_alive(s.get("pid", 0))
-    h = health(cfg) if alive else None
-    print(json.dumps({"recording_process": alive, "pid": s.get("pid"), "started": s.get("started"),
+    h = health(cfg) if alive and s.get("recorder", "screenpipe") == "screenpipe" else None
+    print(json.dumps({"recorder": s.get("recorder", cfg.get("recorder", "screenpipe")),
+                      "recording_process": alive, "pid": s.get("pid"), "started": s.get("started"),
                       "planned_until": s.get("until"), "health": (h or {}).get("status"),
-                      "raw_dir_mb": round(_dir_size(SP_DATA) / 1e6, 1)}, ensure_ascii=False, indent=2))
+                      "raw_dir_mb": round(_dir_size(C.RAW_DIR) / 1e6, 1)}, ensure_ascii=False, indent=2))
     return 0
 
 
@@ -274,14 +305,16 @@ def purge_raw(force: bool = False) -> int:
     if _pid_alive(_load_state().get("pid", 0)):
         print("기록 중에는 삭제하지 않습니다. 먼저 `wa observe stop`.")
         return 2
-    if not SP_DATA.exists():
+    targets = [d for d in (SP_DATA, C.RAW_DIR / "builtin_shots") if d.exists()]
+    if not targets:
         print("삭제할 raw 기록이 없습니다.")
         return 0
-    size = _dir_size(SP_DATA)
+    size = sum(_dir_size(d) for d in targets)
     if not force:
-        print(f"raw 기록 {size/1e6:.1f} MB 를 삭제하려면 --yes 를 붙이세요: {SP_DATA}")
+        print(f"raw 기록 {size/1e6:.1f} MB 를 삭제하려면 --yes 를 붙이세요: {', '.join(map(str, targets))}")
         return 1
-    shutil.rmtree(SP_DATA)
+    for d in targets:
+        shutil.rmtree(d)
     print(f"raw 기록 삭제 완료 ({size/1e6:.1f} MB).")
     return 0
 

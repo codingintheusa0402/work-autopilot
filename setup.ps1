@@ -3,7 +3,7 @@
 #   powershell -ExecutionPolicy Bypass -File setup.ps1 -Demo    ... then run the demo on synthetic data
 # Installs nothing system-wide. screenpipe is fetched later by its own npm package, only when you
 # run `wa observe start`.
-param([switch]$Demo)
+param([switch]$Demo, [ValidateSet("", "builtin", "screenpipe")][string]$Recorder = "")
 $ErrorActionPreference = "Stop"
 Set-Location -Path $PSScriptRoot
 
@@ -25,6 +25,15 @@ Say "2/4  workspace\ (개인 데이터 폴더 — git 에 절대 올라가지 �
 New-Item -ItemType Directory -Force -Path "workspace" | Out-Null
 if (-not (Test-Path "workspace\config.json")) { Set-Content -Path "workspace\config.json" -Value "{}" -Encoding UTF8 }
 Write-Host "ok: $PSScriptRoot\workspace"
+
+Say "기록기 선택 (관찰 단계에서 사용)"
+if (-not $Recorder) {
+  Write-Host "  1) screenpipe - 화면 텍스트까지 기록. 소스 공개 라이선스: 개인 비상업적 사용과 회사 7일 평가는 무료, 그 이상 회사 사용은 유료 플랜."
+  Write-Host "  2) builtin    - 내장 기록기. 앞 창의 앱 이름/창 제목/시간만 로컬 기록 (MIT). Windows 에서는 아직 미검증(untested)."
+  $n = Read-Host "  번호를 고르세요 [2]"
+  $Recorder = if ($n -eq "1") { "screenpipe" } else { "builtin" }
+}
+& $pyExe @pyArgs -c "import json,pathlib,sys; p=pathlib.Path('workspace/config.json'); c=json.loads(p.read_text(encoding='utf-8-sig') or '{}'); c['recorder']=sys.argv[1]; p.write_text(json.dumps(c,indent=2),encoding='utf-8'); print('  recorder =', sys.argv[1])" $Recorder
 
 Say "3/4  환경 점검"
 $env:PYTHONIOENCODING = "utf-8"

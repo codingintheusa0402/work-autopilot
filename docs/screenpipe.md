@@ -37,9 +37,11 @@ whether it does depends on the current terms and on how you install it. Check th
 See `./wa observe command`. In short:
 `--data-dir workspace/raw/screenpipe` (its own folder, deleted after analysis) · `--port 3031` ·
 `--disable-telemetry` · `--disable-audio` (unless you opt in; then local Whisper only) · `--disable-keyboard-capture` ·
-`--disable-clipboard-capture` · `--use-pii-removal=true` · `--ignore-incognito-windows=true` · `--video-quality low` ·
+`--disable-clipboard-capture` · `--use-pii-removal=true` · `--focused-window-screenshots=true` (pixels outside the
+window in front are blacked out) · `--ignore-incognito-windows=true` · `--video-quality low` ·
 `--retention-days 8 --retention-mode all` (backstop) · one `--ignored-windows` per excluded app/keyword ·
-one `--url-block <domain>:subdomains` per excluded site.
+one `--url-block <domain>:subdomains` per excluded site · one `--included-windows` per entry of `include_windows`
+(optional allow-list in `workspace/config.json`: record only those apps/windows).
 
 After recording, `wa observe stop` exports only **time, app name, redacted window title and site domain** — no screen
 text, no images — and `wa analyze` deletes the raw recordings.

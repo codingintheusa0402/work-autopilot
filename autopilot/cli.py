@@ -18,7 +18,8 @@ FLOW = """work-autopilot — 관찰 → 찾기 → 인터뷰 → 만들기 → �
   wa doctor                         환경 점검
   wa demo                           합성 데이터로 전체 흐름 체험 (화면 기록 없음)
 
-1 관찰   wa observe start --days 5   screenpipe 로 3~7일 기록 (로컬 전용, 개인정보 필터 기본 ON)
+1 관찰   wa observe start --days 5   3~7일 기록 (로컬 전용, 개인정보 필터 기본 ON)
+         [--recorder screenpipe|builtin]  builtin = 라이선스 걱정 없는 내장 기록기 (앱/창 제목/시간)
          wa observe status | stop    stop = 메타데이터만 export 후 기록 중지
 2 찾기   wa analyze                  작업 목록·시간·빈도·점수 → workspace/reports/report.html
                                      (분석이 끝나면 원본 화면 기록은 자동 삭제)
@@ -70,10 +71,12 @@ def cmd_observe(a) -> int:
     C.ensure_workspace()
     cfg = C.load_config()
     if a.action == "start":
-        return observe.start(cfg, a.days)
+        return observe.start(cfg, a.days, recorder=a.recorder)
     if a.action == "status":
         return observe.status(cfg)
     if a.action == "stop":
+        if observe._load_state().get("recorder") == "builtin":
+            return observe.stop()          # the built-in logger already writes metadata only
         exported = None
         if observe.health(cfg):
             try:
@@ -96,7 +99,7 @@ def cmd_observe(a) -> int:
 
 def _load_for_analysis(sample: bool) -> list[dict]:
     cfg = C.load_config()
-    paths = [C.ROOT / "samples" / "synthetic_week" / "events.jsonl.gz"] if sample else sorted(C.OBS_DIR.glob("events-*.jsonl*"))
+    paths = [C.ROOT / "samples" / "synthetic_week" / "events.jsonl.gz"] if sample else sorted(list(C.OBS_DIR.glob("events-*.jsonl*")) + list(C.OBS_DIR.glob("builtin-*.jsonl")))
     if not paths:
         raise SystemExit("관찰 데이터가 없습니다. `wa observe start` 로 기록하거나 `wa analyze --sample` 로 데모를 보세요.")
     raw = observe.load_events(paths)
@@ -261,7 +264,8 @@ def main(argv=None) -> int:
 
     o = sp.add_parser("observe")
     o.add_argument("action", choices=["start", "status", "stop", "export", "purge", "command"])
-    o.add_argument("--days", type=int, default=5)
+    o.add_argument("--days", type=float, default=5)
+    o.add_argument("--recorder", choices=["screenpipe", "builtin"], help="default: workspace/config.json 'recorder'")
     o.add_argument("--yes", action="store_true")
     o.set_defaults(fn=cmd_observe)
 

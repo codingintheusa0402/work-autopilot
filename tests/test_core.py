@@ -12,7 +12,7 @@ TMP = tempfile.mkdtemp(prefix="wa-test-")
 os.environ["WA_WORKSPACE"] = TMP
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from autopilot import analyze, config as C, observe, redact, runner, safety, scheduler, sdk  # noqa: E402
+from autopilot import analyze, config as C, logger, observe, redact, runner, safety, scheduler, sdk  # noqa: E402
 
 AT = "@"
 
@@ -195,6 +195,33 @@ class ExportParsing(unittest.TestCase):
         self.assertEqual([r["app"] for r in rows], ["Excel", "Google Chrome"])
         self.assertEqual(rows[1]["domain"], "erp.example.com/o")
         self.assertNotIn("SECRET", json.dumps(rows))
+
+
+class BuiltinLogger(unittest.TestCase):
+    def test_logs_metadata_respects_excludes_and_include_list(self):
+        import datetime as dt
+        cfg = C.load_config()
+        cfg.update(logger_interval_s=0, logger_screenshot_every_s=1, include_windows=["WA-FAKE", "1Password"])
+        seq = iter([{"app": "TextEdit", "title": "WA-FAKE-orders.txt", "wid": 7},
+                    {"app": "1Password", "title": "WA-FAKE vault", "wid": 8},       # excluded even if included
+                    {"app": "Mail", "title": "Inbox", "wid": 9}])                    # not on the include list
+        shots = []
+        for f in C.OBS_DIR.glob("builtin-*.jsonl"):
+            f.unlink()
+        with mock.patch.object(logger, "front_window", side_effect=lambda: next(seq)), \
+                mock.patch.object(logger, "idle_seconds", return_value=0), \
+                mock.patch.object(logger, "screenshot", side_effect=lambda w, p: shots.append(w["app"]) or True):
+            quiet(logger.loop, cfg, dt.datetime.now().astimezone() + dt.timedelta(minutes=1), max_ticks=3)
+        rows = observe.load_events(sorted(C.OBS_DIR.glob("builtin-*.jsonl")))
+        self.assertEqual([(r["app"], r["src"]) for r in rows], [("TextEdit", "builtin")])
+        self.assertEqual(shots, ["TextEdit"])
+
+    def test_screenpipe_gets_include_list(self):
+        cfg = C.load_config()
+        cfg["include_windows"] = ["WA-FAKE"]
+        cmd = observe.record_command(cfg)
+        self.assertIn("--included-windows", cmd)
+        self.assertEqual(cmd[cmd.index("--included-windows") + 1], "WA-FAKE")
 
 
 def tearDownModule():
