@@ -1,0 +1,20 @@
+{
+  "id": "demo-browser-orders",
+  "title": "주문 CSV → 웹 ERP 입력 (데모, 브라우저 CDP)",
+  "task_ids": ["T05", "T03"],
+  "tool": "browser-cdp",
+  "entry": ["python3", "run.py"],
+  "params": {
+    "cdp_port": "9333",
+    "erp_url": "http://127.0.0.1:8765/erp",
+    "orders_csv": "{workspace}/demo_files/orders.csv",
+    "result_csv": "{workspace}/demo_files/erp_entered.csv"
+  },
+  "risky_actions": {
+    "submit_form": "ERP 화면의 '등록' 버튼 클릭 (데모 ERP 는 이 컴퓨터 안의 가짜 서버)"
+  },
+  "schedule": {"time": "09:45", "weekdays": [1, 2, 3, 4, 5]},
+  "minutes_saved_per_run": 12,
+  "timeout_s": 180,
+  "status": "draft"
+}

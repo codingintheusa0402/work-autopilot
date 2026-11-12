@@ -91,6 +91,10 @@ def cmd_observe(a) -> int:
         return 0 if observe.export(cfg) else 1
     if a.action == "purge":
         return observe.purge_raw(force=a.yes)
+    if a.action == "binary":
+        found = observe.find_binary()
+        print(found or "screenpipe 실행 파일을 찾지 못했습니다 (아직 한 번도 실행하지 않았다면 정상).")
+        return 0 if found else 1
     if a.action == "command":
         print(" ".join(observe.record_command(cfg)))
         return 0
@@ -263,7 +267,7 @@ def main(argv=None) -> int:
     sp.add_parser("demo").set_defaults(fn=cmd_demo)
 
     o = sp.add_parser("observe")
-    o.add_argument("action", choices=["start", "status", "stop", "export", "purge", "command"])
+    o.add_argument("action", choices=["start", "status", "stop", "export", "purge", "command", "binary"])
     o.add_argument("--days", type=float, default=5)
     o.add_argument("--recorder", choices=["screenpipe", "builtin"], help="default: workspace/config.json 'recorder'")
     o.add_argument("--yes", action="store_true")

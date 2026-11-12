@@ -319,6 +319,18 @@ def purge_raw(force: bool = False) -> int:
     return 0
 
 
+def find_binary() -> str | None:
+    """Real path of the screenpipe CLI binary npx downloaded (needed for the macOS Screen Recording list)."""
+    import glob
+    caches = [os.environ.get("npm_config_cache") or "", str(Path.home() / ".npm"),
+              str(Path(os.environ.get("LOCALAPPDATA", "")) / "npm-cache")]
+    hits = []
+    for c in filter(None, caches):
+        hits += glob.glob(os.path.join(c, "_npx", "*", "node_modules", "@screenpipe", "cli-*", "bin", "screenpipe*"))
+    hits = [h for h in hits if os.path.isfile(h)]
+    return os.path.realpath(max(hits, key=os.path.getmtime)) if hits else None
+
+
 def load_events(paths: list[Path]) -> list[dict]:
     evs: list[dict] = []
     for p in paths:

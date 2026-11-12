@@ -224,6 +224,22 @@ class BuiltinLogger(unittest.TestCase):
         self.assertEqual(cmd[cmd.index("--included-windows") + 1], "WA-FAKE")
 
 
+class ApprovedPath(unittest.TestCase):
+    def test_approved_risky_action_runs_in_live_mode_only(self):
+        dst, _ = install_demo()
+        calls = []
+        env = {"WA_AUTOMATION_DIR": str(dst), "WA_MODE": "live", "WA_RUN_ID": "t-approved"}
+        with mock.patch.dict(os.environ, env), mock.patch.object(sdk, "is_approved", return_value=True):
+            with quiet(sdk.Run) as run:
+                run.risky("send_message", "x", lambda: calls.append(1))
+        self.assertEqual(calls, [1])
+        with mock.patch.dict(os.environ, dict(env, WA_MODE="dry", WA_RUN_ID="t-dry")), \
+                mock.patch.object(sdk, "is_approved", return_value=True):
+            with quiet(sdk.Run) as run:
+                run.risky("send_message", "x", lambda: calls.append(2))
+        self.assertEqual(calls, [1])          # dry-run never performs it, approved or not
+
+
 def tearDownModule():
     shutil.rmtree(TMP, ignore_errors=True)
 

@@ -1,0 +1,19 @@
+{
+  "id": "demo-api-tickets",
+  "title": "주문 API 조회 → 지연 주문 티켓 등록 (데모, 앱 API)",
+  "task_ids": ["T09", "T10"],
+  "tool": "app-api",
+  "entry": ["python3", "run.py"],
+  "params": {
+    "base_url": "http://127.0.0.1:8765/api",
+    "token_env": "WA_APP_TOKEN",
+    "report_csv": "{workspace}/demo_files/late_orders.csv"
+  },
+  "risky_actions": {
+    "submit_form": "지연 주문마다 티켓 시스템에 티켓 1건 생성 (데모: 이 컴퓨터 안의 가짜 API)"
+  },
+  "schedule": {"time": "10:30", "weekdays": [1, 2, 3, 4, 5]},
+  "minutes_saved_per_run": 8,
+  "timeout_s": 60,
+  "status": "draft"
+}

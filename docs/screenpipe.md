@@ -33,6 +33,12 @@ whether it does depends on the current terms and on how you install it. Check th
   Settings → Privacy → Analytics. The CLI flag `--disable-telemetry` turns telemetry off; work-autopilot always passes it.
 - The local API listens on `127.0.0.1` only unless `--listen-on-lan` is set (we never set it).
 
+## macOS permission gotcha (seen in our real-capture test, macOS 27)
+Giving Screen Recording to Terminal was **not** enough: frames came out blank, or screenpipe logged
+`no displays enumerated`. Adding the screenpipe binary itself under System Settings → Privacy & Security →
+Screen & System Audio Recording (+) and starting it from a normal Terminal window fixed it. `./wa observe binary`
+prints the binary's real path. Remove that entry (−) when you are done observing.
+
 ## The exact flags work-autopilot passes
 See `./wa observe command`. In short:
 `--data-dir workspace/raw/screenpipe` (its own folder, deleted after analysis) · `--port 3031` ·

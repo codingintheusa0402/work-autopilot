@@ -40,10 +40,14 @@ Offer `./wa demo` first so the user sees the whole loop on fake data.
 ### 1. Observe (3–7 days, user chooses)
 1. Explain in plain words what is recorded (screen text and window titles, locally), what is not (excluded apps,
    private windows, keystrokes, clipboard, audio unless they opt in), and that raw recordings are deleted after analysis.
-2. Tell them about screenpipe's license honestly (see `docs/screenpipe.md`) and let them decide. Using it at work may
-   need their employer's OK — ask them to check.
+2. Recorder choice (asked at setup, stored as `recorder` in `workspace/config.json`):
+   - `screenpipe`: richer data. License: free for personal use and a 7-day evaluation at a company; company use beyond
+     that needs screenpipe's paid plan (`docs/screenpipe.md`).
+   - `builtin`: license-free logger in this repo (front app, window title, time; optional front-window screenshots).
+   Recommend `builtin` on work computers unless they have a screenpipe plan. Either way, recording a work computer may
+   need their employer's OK — ask them to check. `include_windows` limits recording to the apps/windows they name.
 3. Ask: how many days (3–7)? Any extra apps/sites to exclude? Add exclusions to `workspace/config.json`.
-4. `./wa observe start --days N`. On macOS the user must allow Screen Recording (and Accessibility) for the
+4. `./wa observe start --days N [--recorder builtin|screenpipe]`. On macOS the user must allow Screen Recording (and Accessibility) for the
    terminal/node in System Settings → Privacy & Security. You cannot click that for them.
 5. During the period `./wa observe status`. At the end `./wa observe stop` (exports metadata, then stops).
 

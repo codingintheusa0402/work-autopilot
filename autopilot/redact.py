@@ -9,7 +9,9 @@ RESIDENT_ID = re.compile(r"(?<!\d)\d{6}[- ]?[1-8]\d{6}(?!\d)")          # KR 주
 CARD = re.compile(r"(?<!\d)(?:\d[ -]?){13,19}(?!\d)")
 LONG_NUMBER = re.compile(r"(?<![A-Za-z])\d{5,}")
 SECRETISH = re.compile(
-    r"(?i)(password|passwd|pwd|비밀번호|api[_-]?key|secret|token|bearer)\s*[:=]\s*\S+"
+    # key = literal value. Code expressions (os.environ.get(...), func()) are not values and don't match.
+    r"(?i)(password|passwd|pwd|비밀번호|api[_-]?key|secret|token|bearer)\s*[:=]\s*"
+    r"[\"']?[^\s\"'(),.\[\]{}]{4,}[\"']?(?=\s|$|[,;)}\]])"
 )
 
 

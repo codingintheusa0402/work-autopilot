@@ -1,0 +1,19 @@
+{
+  "id": "demo-ai-triage",
+  "title": "문의 메일 분류 + 답장 초안 (데모, AI 단계)",
+  "task_ids": ["T01"],
+  "tool": "ai-step",
+  "entry": ["python3", "run.py"],
+  "params": {
+    "agent": "claude",
+    "inbox_json": "{workspace}/demo_files/inbox.json",
+    "drafts_md": "{workspace}/demo_files/reply_drafts.md"
+  },
+  "risky_actions": {
+    "send_message": "답장 초안을 실제로 보내기 (데모: 아무 데도 보내지 않음)"
+  },
+  "schedule": null,
+  "minutes_saved_per_run": 10,
+  "timeout_s": 600,
+  "status": "draft"
+}
