@@ -81,7 +81,9 @@ def render_html(r: dict) -> str:
     by = {"automatable": 0, "ai_assistable": 0, "keep_human": 0}
     for t in tasks:
         by[t["verdict"]] += 1
-    top = [t for t in tasks if t["verdict"] != "keep_human"][:3]
+    rank = {"automatable": 0, "ai_assistable": 1}
+    top = sorted((t for t in tasks if t["verdict"] in rank),
+                 key=lambda t: (rank[t["verdict"]], -t["est_minutes_saved_per_week"]))[:3]
     nexts = "".join(f"<li><b>{_e(t['id'])}</b> {_e(t['name'])} — 주 {t['minutes_per_week']/60:.1f}시간</li>" for t in top)
 
     return f"""<!doctype html><html lang=ko><head><meta charset=utf-8>
