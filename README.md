@@ -76,6 +76,8 @@ claude        # 또는 codex
 ./wa dashboard                  #   대시보드
 ```
 
+되돌린(`wa undo`) 실제 실행은 아낀 시간이 0분으로 계산되고, `wa logs` 에는 `UNDONE`, 대시보드에는 `되돌림` 으로 표시됩니다.
+
 ## 안전장치 (코드로 강제됩니다)
 
 - **비밀번호·카드번호·주민번호는 저장도 입력도 하지 않습니다.** 로그인은 사용자가 직접. 자동화 코드에 그런 값이 보이면 `wa test` 가 실패합니다.
@@ -116,12 +118,17 @@ claude        # 또는 codex
 ```
 
 특정 앱·창만 기록하고 싶으면 `workspace/config.json` 에 `"include_windows": ["Excel", "ERP"]` 처럼 적으세요. 두 기록기 모두 적용됩니다.
+내장 기록기 설정(`workspace/config.json`): `logger_interval_s` (기록 간격, 기본 10초), `logger_idle_s` (이 시간 넘게 입력이 없으면
+기록 안 함, 기본 300초), `logger_screenshot_every_s` (앞 창 스크린샷 간격, 기본 0 = 끔). 기본값: [`config/privacy.default.json`](config/privacy.default.json)
 macOS 에서 내장 기록기의 창 제목 수집은 **실험적**입니다. 터미널 앱에 **화면 및 시스템 오디오 기록** 권한이 있어도 최신 macOS 에서는
 제목이 비어 올 수 있고, 그때는 앱 이름 단위로 기록·분석합니다 (`include_windows` 도 앱 이름으로 적으세요).
 
 **macOS 에서 screenpipe 화면이 비어 있거나(단색) "no displays enumerated" 가 보이면:** 시스템 설정 → 개인정보 보호 및 보안 →
 화면 및 시스템 오디오 기록 → **+** 로 screenpipe 실행 파일 자체를 추가하세요. 경로는 `./wa observe binary` 로 확인합니다.
 터미널 권한만으로는 부족할 수 있습니다 (실제 테스트에서 확인).
+
+**짧은 시험 기록:** `--days` 는 소수도 받습니다. 3~7일 범위 밖(예: 15분 = `--days 0.01`)은 `WA_ALLOW_SHORT_OBSERVE=1` 을 붙여야 시작됩니다.
+분석은 보통 전체 기간 10분 미만인 작업을 "기타 (짧은 작업 모음)"로 묶는데, 짧은 기록에서는 이 기준이 전체 기록 시간의 3% 로 내려갑니다.
 
 ## screenpipe 에 대해 꼭 알아 두세요
 
