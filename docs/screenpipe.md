@@ -49,8 +49,14 @@ window in front are blacked out) · `--ignore-incognito-windows=true` · `--vide
 one `--url-block <domain>:subdomains` per excluded site · one `--included-windows` per entry of `include_windows`
 (optional allow-list in `workspace/config.json`: record only those apps/windows).
 
+screenpipe's local API needs a bearer key. `wa observe start` generates a throwaway random key for that one
+observation (not a user credential), passes it to screenpipe as `SCREENPIPE_API_KEY`, keeps it in
+`workspace/state` (file mode 600) for the export, and deletes it on `wa observe stop`.
+
 After recording, `wa observe stop` exports only **time, app name, redacted window title and site domain** — no screen
-text, no images — and `wa analyze` deletes the raw recordings.
+text, no images; it reads both OCR and accessibility frames, whichever your screenpipe version returns — and
+`wa analyze` deletes the raw recordings. If the export fails, `stop` still stops screenpipe and prints a warning: that
+observation's metadata was not exported, and its raw recordings are left in `workspace/raw` (not deleted).
 
 Note: even with `--data-dir`, screenpipe 0.4.58 writes a tiny `~/.screenpipe/machine_id` file (an installation id,
 no screen data). We leave `~/.screenpipe` alone because it may belong to your own screenpipe install; delete it yourself
